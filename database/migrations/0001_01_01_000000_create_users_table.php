@@ -14,12 +14,21 @@ return new class extends Migration
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('email')->unique();
+            $table->string('username')->unique();
+            $table->string('phone')->unique()->nullable();
+            $table->string('email')->unique()->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->rememberToken();
             $table->foreignId('current_team_id')->nullable();
             $table->string('profile_photo_path', 2048)->nullable();
+            $table->json('user_information')->nullable(); // JSON field
+            $table->tinyInteger('status')->default(1);
+            $table->string('language')->default('en'); // Default language as English
+            $table->string('currency')->default('USD');
+            $table->string('time_zone')->default('Asia/Baghdad');
+            $table->string('fcm_token')->nullable();
+            $table->softDeletes();
             $table->timestamps();
         });
 

@@ -1,45 +1,61 @@
-<x-guest-layout>
-    <x-authentication-card>
-        <x-slot name="logo">
-            <x-authentication-card-logo />
-        </x-slot>
+@php
+    $customizerHidden = 'customizer-hide';
+    $configData = appClasses();
+    $current_language = app()->getLocale();
+@endphp
 
-        <div class="mb-4 text-sm text-gray-600 dark:text-gray-400">
-            {{ __('Before continuing, could you verify your email address by clicking on the link we just emailed to you? If you didn\'t receive the email, we will gladly send you another.') }}
-        </div>
+@extends('layouts/authLayout')
 
-        @if (session('status') == 'verification-link-sent')
-            <div class="mb-4 font-medium text-sm text-green-600 dark:text-green-400">
-                {{ __('A new verification link has been sent to the email address you provided in your profile settings.') }}
-            </div>
-        @endif
+@section('title', ($current_language == 'ar') ? 'التحقق من البريد الإلكتروني' : 'Verify Email')
 
-        <div class="mt-4 flex items-center justify-between">
-            <form method="POST" action="{{ route('verification.send') }}">
-                @csrf
+@section('page-style')
+    <!-- Page -->
+    @vite('resources/assets/vendor/scss/pages/page-auth.scss')
+@endsection
 
-                <div>
-                    <x-button type="submit">
-                        {{ __('Resend Verification Email') }}
-                    </x-button>
+@section('content')
+    <div class="authentication-wrapper authentication-cover">
+        <div class="m-0 authentication-inner row">
+            <!-- /Left Text -->
+            <div class="p-0 d-none d-lg-flex col-lg-8">
+                <div class="auth-cover-bg auth-cover-bg-color d-flex justify-content-center align-items-center">
+                    <img src="{{ asset('assets/img/illustrations/auth-verify-email-illustration-' . $configData['style'] . '.png') }}"
+                        alt="auth-verify-email-cover" class="my-5 auth-illustration"
+                        data-app-light-img="illustrations/auth-verify-email-illustration-light.png"
+                        data-app-dark-img="illustrations/auth-verify-email-illustration-dark.png">
+
+                    <img src="{{ asset('assets/img/illustrations/bg-shape-image-' . $configData['style'] . '.png') }}"
+                        alt="auth-verify-email-cover" class="platform-bg"
+                        data-app-light-img="illustrations/bg-shape-image-light.png"
+                        data-app-dark-img="illustrations/bg-shape-image-dark.png">
                 </div>
-            </form>
-
-            <div>
-                <a
-                    href="{{ route('profile.show') }}"
-                    class="underline text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800"
-                >
-                    {{ __('Edit Profile') }}</a>
-
-                <form method="POST" action="{{ route('logout') }}" class="inline">
-                    @csrf
-
-                    <button type="submit" class="underline text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800 ms-2">
-                        {{ __('Log Out') }}
-                    </button>
-                </form>
             </div>
+            <!-- /Left Text -->
+
+            <!--  Verify email -->
+            <div class="p-6 d-flex col-12 col-lg-4 align-items-center authentication-bg p-sm-12">
+                <div class="mx-auto mt-5 mt-12 w-px-400">
+                    <h4 class="mb-1">{{ __('messages.verify_email.heading') }} ✉️</h4>
+                    <p class="mb-0 text-start">
+                        {!! __('messages.verify_email.sub_heading', ['email' => Auth::user()->email]) !!}
+                    </p>
+                    <form method="POST" action="{{ route('verification.send') }}">
+                        @csrf
+                        <button type="submit" class="my-6 btn btn-primary w-100">
+                            {{ __('messages.verify_email.btn_resend') }}
+                        </button>
+                    </form>
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="mb-5 btn btn-danger w-100">
+                            <i class="ti ti-chevron-left scaleX-n1-rtl me-1_5"></i>
+                            {{ __('messages.verify_email.btn_logout') }}
+                        </button>
+                    </form>
+                    {!! __('messages.verify_email.link_profile', ['profile' => route('profile.show')]) !!}
+                </div>
+            </div>
+            <!-- / Verify email -->
         </div>
-    </x-authentication-card>
-</x-guest-layout>
+    </div>
+@endsection

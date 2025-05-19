@@ -1,58 +1,135 @@
-<x-guest-layout>
-    <x-authentication-card>
-        <x-slot name="logo">
-            <x-authentication-card-logo />
-        </x-slot>
+@php
+    $customizerHidden = 'customizer-hide';
+    $configData = appClasses();
+    $current_language = app()->getLocale();
+@endphp
 
-        <div x-data="{ recovery: false }">
-            <div class="mb-4 text-sm text-gray-600 dark:text-gray-400" x-show="! recovery">
-                {{ __('Please confirm access to your account by entering the authentication code provided by your authenticator application.') }}
+@extends('layouts/authLayout')
+
+@section('title', ($current_language == 'ar') ? 'التحقق بخطوتين' : 'Two Steps Verification')
+
+@section('vendor-style')
+    @vite(['resources/assets/vendor/libs/@form-validation/form-validation.scss'])
+@endsection
+
+@section('page-style')
+    @vite(['resources/assets/vendor/scss/pages/page-auth.scss'])
+@endsection
+
+@section('vendor-script')
+    @vite(['resources/assets/vendor/libs/cleavejs/cleave.js', 'resources/assets/vendor/libs/@form-validation/popular.js', 'resources/assets/vendor/libs/@form-validation/bootstrap5.js', 'resources/assets/vendor/libs/@form-validation/auto-focus.js'])
+@endsection
+
+@section('page-script')
+    @vite(['resources/assets/js/auth/index.js', 'resources/assets/js/auth/two-steps.js'])
+@endsection
+
+@section('content')
+    <div class="authentication-wrapper authentication-cover">
+        <div class="m-0 authentication-inner row">
+            <!-- /Left Text -->
+            <div class="p-0 d-none d-lg-flex col-lg-8">
+                <div class="auth-cover-bg auth-cover-bg-color d-flex justify-content-center align-items-center">
+                    <img src="{{ asset('assets/img/illustrations/auth-two-step-illustration-' . $configData['style'] . '.png') }}"
+                        alt="auth-two-steps-cover" class="my-5 auth-illustration"
+                        data-app-light-img="illustrations/auth-two-step-illustration-light.png"
+                        data-app-dark-img="illustrations/auth-two-step-illustration-dark.png">
+
+                    <img src="{{ asset('assets/img/illustrations/bg-shape-image-' . $configData['style'] . '.png') }}"
+                        alt="auth-two-steps-cover" class="platform-bg"
+                        data-app-light-img="illustrations/bg-shape-image-light.png"
+                        data-app-dark-img="illustrations/bg-shape-image-dark.png">
+                </div>
             </div>
+            <!-- /Left Text -->
 
-            <div class="mb-4 text-sm text-gray-600 dark:text-gray-400" x-cloak x-show="recovery">
-                {{ __('Please confirm access to your account by entering one of your emergency recovery codes.') }}
+            <!-- Two Steps Verification -->
+            <div class="p-6 d-flex col-12 col-lg-4 align-items-center authentication-bg p-sm-12">
+                <div class="mx-auto mt-5 mt-12 w-px-400">
+                    <h4 class="mb-1">{{ __('messages.2fa.heading') }} 💬</h4>
+                    <!-- Dropdown to select verification method -->
+                    <label for="verificationMethod" class="form-label">{{ __('messages.2fa.label_method') }}</label>
+                    <select id="verificationMethod" class="mb-4 form-select">
+                        <option value="code" selected>{{ __('messages.2fa.select_method1') }}</option>
+                        <option value="recovery">{{ __('messages.2fa.select_method2') }}</option>
+                    </select>
+                    <div id="codeForm">
+                        <p class="mb-6 text-start">
+                            {{ __('messages.2fa.sub_heading') }}
+                        </p>
+                        <p class="mb-0">{{ __('messages.2fa.p_method1') }}</p>
+                        <form id="twoStepsForm" action="{{ route('two-factor.login') }}" method="POST">
+                            @csrf
+                            <div class="mb-6">
+                                <div
+                                    class="auth-input-wrapper d-flex align-items-center justify-content-between numeral-mask-wrapper">
+                                    <input type="tel"
+                                        class="my-2 text-center form-control auth-input h-px-50 numeral-mask mx-sm-1"
+                                        maxlength="1" autofocus>
+                                    <input type="tel"
+                                        class="my-2 text-center form-control auth-input h-px-50 numeral-mask mx-sm-1"
+                                        maxlength="1">
+                                    <input type="tel"
+                                        class="my-2 text-center form-control auth-input h-px-50 numeral-mask mx-sm-1"
+                                        maxlength="1">
+                                    <input type="tel"
+                                        class="my-2 text-center form-control auth-input h-px-50 numeral-mask mx-sm-1"
+                                        maxlength="1">
+                                    <input type="tel"
+                                        class="my-2 text-center form-control auth-input h-px-50 numeral-mask mx-sm-1"
+                                        maxlength="1">
+                                    <input type="tel"
+                                        class="my-2 text-center form-control auth-input h-px-50 numeral-mask mx-sm-1"
+                                        maxlength="1">
+                                </div>
+                                <!-- Create a hidden field which is combined by 3 fields above -->
+                                <input type="hidden" name="code" />
+                            </div>
+                            <button class="mb-6 btn btn-primary d-grid w-100">
+                                {{ __('messages.2fa.btn_submit') }}
+                            </button>
+                            <a href="{{ route('login') }}" class="d-flex align-items-center justify-content-center">
+                                <i class="ti ti-chevron-left scaleX-n1-rtl me-1_5"></i>
+                                {{ __('messages.2fa.link_login') }}
+                            </a>
+                        </form>
+                    </div>
+                    <div id="recoveryForm">
+                        <p class="mb-6 text-start">
+                            {{ __('messages.2fa.sub_heading2') }}
+                        </p>
+                        <form id="recoveryCodeForm" action="{{ route('two-factor.login') }}" method="POST">
+                            @csrf
+                            <div class="mb-6">
+                                <label for="recovery_code" class="form-label">{{ __('messages.2fa.label_method2') }}</label>
+                                <input type="text" name="recovery_code" id="recovery_code" class="form-control"
+                                    placeholder="{{ __('messages.2fa.placeholder_method2') }}">
+                            </div>
+                            <button class="mb-6 btn btn-primary d-grid w-100">{{ __('messages.2fa.btn_submit') }}</button>
+                            <a href="{{ route('login') }}" class="d-flex align-items-center justify-content-center">
+                                <i class="ti ti-chevron-left scaleX-n1-rtl me-1_5"></i>
+                                {{ __('messages.2fa.link_login') }}
+                            </a>
+                        </form>
+                    </div>
+                </div>
             </div>
-
-            <x-validation-errors class="mb-4" />
-
-            <form method="POST" action="{{ route('two-factor.login') }}">
-                @csrf
-
-                <div class="mt-4" x-show="! recovery">
-                    <x-label for="code" value="{{ __('Code') }}" />
-                    <x-input id="code" class="block mt-1 w-full" type="text" inputmode="numeric" name="code" autofocus x-ref="code" autocomplete="one-time-code" />
-                </div>
-
-                <div class="mt-4" x-cloak x-show="recovery">
-                    <x-label for="recovery_code" value="{{ __('Recovery Code') }}" />
-                    <x-input id="recovery_code" class="block mt-1 w-full" type="text" name="recovery_code" x-ref="recovery_code" autocomplete="one-time-code" />
-                </div>
-
-                <div class="flex items-center justify-end mt-4">
-                    <button type="button" class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 underline cursor-pointer"
-                                    x-show="! recovery"
-                                    x-on:click="
-                                        recovery = true;
-                                        $nextTick(() => { $refs.recovery_code.focus() })
-                                    ">
-                        {{ __('Use a recovery code') }}
-                    </button>
-
-                    <button type="button" class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 underline cursor-pointer"
-                                    x-cloak
-                                    x-show="recovery"
-                                    x-on:click="
-                                        recovery = false;
-                                        $nextTick(() => { $refs.code.focus() })
-                                    ">
-                        {{ __('Use an authentication code') }}
-                    </button>
-
-                    <x-button class="ms-4">
-                        {{ __('Log in') }}
-                    </x-button>
-                </div>
-            </form>
+            <!-- /Two Steps Verification -->
         </div>
-    </x-authentication-card>
-</x-guest-layout>
+    </div>
+
+    <script>
+        // Toggle between forms based on the selected verification method
+        document.getElementById('recoveryForm').style.display = 'none';
+        document.getElementById('verificationMethod').addEventListener('change', function() {
+            if (this.value === 'recovery') {
+                document.getElementById('codeForm').style.display = 'none';
+                document.getElementById('recoveryForm').style.display = 'block';
+            } else {
+                document.getElementById('codeForm').style.display = 'block';
+                document.getElementById('recoveryForm').style.display = 'none';
+            }
+        });
+    </script>
+
+@endsection

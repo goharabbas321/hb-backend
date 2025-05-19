@@ -2,22 +2,28 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Jetstream\HasProfilePhoto;
 use Laravel\Sanctum\HasApiTokens;
+use Modules\Medical\Models\Hospital;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens;
-
-    /** @use HasFactory<\Database\Factories\UserFactory> */
+    use HasRoles;
     use HasFactory;
     use HasProfilePhoto;
     use Notifiable;
+    use SoftDeletes;
+    use LogsActivity;
     use TwoFactorAuthenticatable;
 
     /**
@@ -27,8 +33,15 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
+        'username',
+        'phone',
         'email',
         'password',
+        'user_information',
+        'language',
+        'currency',
+        'time_zone',
+        'fcm_token',
     ];
 
     /**
@@ -63,5 +76,38 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Get the hospital associated with the user.
+     */
+    public function hospital()
+    {
+        return $this->hasOne(Hospital::class);
+    }
+
+    /**
+     * Get the options for logging activity.
+     *
+     * @return LogOptions
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly([
+                'name',
+                'username',
+                'phone',
+                'email',
+                'password',
+                'user_information',
+                'language',
+                'currency',
+                'time_zone',
+                'fcm_token',
+            ]) // Fields to log
+            ->useLogName('users')                 // Log name
+            ->setDescriptionForEvent(fn(string $eventName) => "{$eventName} a user")
+            ->logOnlyDirty();                     // Log only changed fields
     }
 }

@@ -1,0 +1,130 @@
+# Disable Directory Listing
+Options -Indexes
+
+# Protect Sensitive Files
+<FilesMatch "(\.env|\.htaccess|composer\.(json|lock)|package(-lock)?\.json|yarn\.lock|server\.php|artisan|.gitignore|node_modules)">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Block Direct Access to Storage & Bootstrap Folders
+RewriteRule ^(bootstrap)/(.*) - [F,L]
+
+<IfModule mod_security.c>
+    # Hide Server Information
+    ServerTokens Prod
+    ServerSignature Off
+    SecServerSignature " "
+</IfModule>
+
+<IfModule mod_headers.c>
+    # Essential Security Headers
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set X-Content-Type-Options nosniff
+    Header always set Referrer-Policy "no-referrer-when-downgrade"
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+</IfModule>
+
+<IfModule mod_rewrite.c>
+    <IfModule mod_negotiation.c>
+        Options -MultiViews -Indexes
+    </IfModule>
+
+    RewriteEngine On
+
+    # Enforce HTTPS (Uncomment if needed)
+    # RewriteCond %{HTTPS} off
+    # RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
+
+    # Force WWW or Non-WWW (Choose One)
+    # Uncomment ONE of the following rules:
+
+    # Force WWW
+    # RewriteCond %{HTTP_HOST} ^example.com [NC]
+    # RewriteRule ^(.*)$ http://www.example.com/$1 [L,R=301]
+
+    # Force Non-WWW
+    # RewriteCond %{HTTP_HOST} ^www\.(.*)$ [NC]
+    # RewriteRule ^(.*)$ https://%1/$1 [L,R=301]
+
+    # Block Dangerous HTTP Methods
+    RewriteCond %{REQUEST_METHOD} ^(TRACE)
+    RewriteRule .* - [F]
+
+    # Handle Authorization Header for APIs
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # Block XSS & SQL Injection
+    RewriteCond %{QUERY_STRING} (\<|%3C).*script.*(\>|%3E) [NC,OR]
+    RewriteCond %{QUERY_STRING} (\-\-|\%23|\%3B) [NC,OR]  # Removed unnecessary characters like * and `.
+    RewriteCond %{QUERY_STRING} (union.*select.*\() [NC]
+    RewriteRule .* - [F,L]
+
+    # Redirect Trailing Slashes If Not A Folder...
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} (.+)/$
+    RewriteRule ^ %1 [L,R=301]
+
+    # Redirect All Requests to /public
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ /public/$1 [L,QSA]
+
+    # Handle Laravel Requests Inside /public
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^ /public/index.php [L]
+</IfModule>
+
+# Enable Brotli & Gzip Compression for Performance
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json
+</IfModule>
+<IfModule mod_brotli.c>
+    AddOutputFilterByType BROTLI_COMPRESS text/html text/plain text/xml text/css text/javascript application/javascript application/json
+</IfModule>
+
+# Leverage Browser Caching for Performance
+# <IfModule mod_expires.c>
+#     ExpiresActive On
+#     ExpiresByType image/jpg "access plus 1 year"
+#     ExpiresByType image/jpeg "access plus 1 year"
+#     ExpiresByType image/png "access plus 1 year"
+#     ExpiresByType image/gif "access plus 1 year"
+#     ExpiresByType text/css "access plus 1 month"
+#     ExpiresByType text/javascript "access plus 1 month"
+#     ExpiresByType application/javascript "access plus 1 month"
+#     ExpiresByType application/pdf "access plus 1 year"
+#     ExpiresByType application/x-shockwave-flash "access plus 1 year"
+#     ExpiresByType image/x-icon "access plus 1 year"
+#     ExpiresDefault "access plus 2 days"
+# </IfModule>
+
+# Block Bad Bots & Scrapers
+<IfModule mod_setenvif.c>
+    SetEnvIfNoCase User-Agent "MJ12bot" bad_bot
+    SetEnvIfNoCase User-Agent "AhrefsBot" bad_bot
+    SetEnvIfNoCase User-Agent "SemrushBot" bad_bot
+    SetEnvIfNoCase User-Agent "Baiduspider" bad_bot
+    SetEnvIfNoCase User-Agent "DotBot" bad_bot
+    SetEnvIfNoCase User-Agent "AspiegelBot" bad_bot
+</IfModule>
+<IfModule mod_rewrite.c>
+    RewriteCond %{ENV:bad_bot} !=""
+    RewriteRule .* - [F,L]
+</IfModule>
+
+# Prevent Image Hotlinking
+<IfModule mod_rewrite.c>
+    RewriteCond %{HTTP_REFERER} !^$
+    RewriteCond %{HTTP_REFERER} !^https?://(www\.)?example\.com/ [NC]
+    RewriteRule \.(jpg|jpeg|png|gif|bmp)$ - [F,NC]
+</IfModule>
+
+# Handle Large File Uploads in Laravel
+php_value upload_max_filesize 1000M
+php_value post_max_size 1000M
+php_value max_execution_time 600
+php_value max_input_time 600
